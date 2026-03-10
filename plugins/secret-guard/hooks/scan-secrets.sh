@@ -19,19 +19,19 @@ fi
 patterns=(
   'AKIA[0-9A-Z]{16}'
   'aws_secret_access_key'
-  'api[_\-]?key\s*[:=]\s*['"'"'"][a-zA-Z0-9]'
-  'bearer\s+[a-zA-Z0-9_\-\.]+'
-  'BEGIN\s+(RSA\s+|EC\s+|DSA\s+|OPENSSH\s+)?PRIVATE\s+KEY'
+  'api[_\-]?key[[:space:]]*[:=][[:space:]]*['"'"'"][a-zA-Z0-9]'
+  'bearer[[:space:]]+[a-zA-Z0-9_\-\.]+'
+  'BEGIN[[:space:]]+(RSA[[:space:]]+|EC[[:space:]]+|DSA[[:space:]]+|OPENSSH[[:space:]]+)?PRIVATE[[:space:]]+KEY'
   'sk-[a-zA-Z0-9]{20,}'
   'gh[pousr]_[a-zA-Z0-9]{36,}'
-  'secret[_\-]?key\s*[:=]\s*['"'"'"][a-zA-Z0-9]'
-  'password\s*[:=]\s*['"'"'"][^'"'"'"]{8,}'
+  'secret[_\-]?key[[:space:]]*[:=][[:space:]]*['"'"'"][a-zA-Z0-9]'
+  'password[[:space:]]*[:=][[:space:]]*['"'"'"][^'"'"'"]{8,}'
   '://[^:]+:[^@]+@'
 )
 
 found=false
 for pattern in "${patterns[@]}"; do
-  if echo "$content" | grep -qPi "$pattern" 2>/dev/null; then
+  if echo "$content" | grep -qEi "$pattern"; then
     found=true
     break
   fi

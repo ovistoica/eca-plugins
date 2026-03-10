@@ -22,7 +22,7 @@ Prevents accidental commits of hardcoded secrets, API keys, and credentials by s
 ## Requirements
 
 - **`jq`** must be installed for JSON parsing
-- **`grep -P`** (PCRE support) must be available (default on most Linux systems)
+- **`grep -E`** (extended regex) must be available (default on Linux and macOS)
 
 ## How it works
 
