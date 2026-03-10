@@ -1,0 +1,47 @@
+---
+import { githubAvatarUrl } from '../constants';
+
+interface Props {
+  author: string;
+  size: number;
+  class?: string;
+}
+
+const { author, size, class: className } = Astro.props;
+---
+
+<img
+  src={githubAvatarUrl(author, size)}
+  alt={author}
+  class:list={['gh-avatar', className]}
+  width={size / 2}
+  height={size / 2}
+  loading="lazy"
+/>
+
+<style>
+  .gh-avatar {
+    border-radius: 50%;
+    background: var(--color-bg-surface);
+    flex-shrink: 0;
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLImageElement>('.gh-avatar').forEach(img => {
+    img.addEventListener('error', function () {
+      this.style.display = 'none';
+      const fallback = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      fallback.setAttribute('width', this.getAttribute('width') ?? '16');
+      fallback.setAttribute('height', this.getAttribute('height') ?? '16');
+      fallback.setAttribute('viewBox', '0 0 24 24');
+      fallback.setAttribute('fill', 'none');
+      fallback.setAttribute('stroke', 'currentColor');
+      fallback.setAttribute('stroke-width', '2');
+      fallback.setAttribute('stroke-linecap', 'round');
+      fallback.setAttribute('stroke-linejoin', 'round');
+      fallback.innerHTML = '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>';
+      this.parentNode?.insertBefore(fallback, this);
+    }, { once: true });
+  });
+</script>

@@ -1,0 +1,22 @@
+{
+  "journal-start": {
+    "type": "chatStart",
+    "visible": false,
+    "actions": [
+      {
+        "type": "shell",
+        "file": "journal-start.sh"
+      }
+    ]
+  },
+  "journal-end": {
+    "type": "chatEnd",
+    "visible": false,
+    "actions": [
+      {
+        "type": "shell",
+        "file": "journal-end.sh"
+      }
+    ]
+  }
+}

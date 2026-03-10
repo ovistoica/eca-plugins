@@ -1,50 +1,28 @@
 ---
-import { unified } from 'unified';
-import remarkParse from 'remark-parse';
-import remarkRehype from 'remark-rehype';
-import rehypeStringify from 'rehype-stringify';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import type { Plugin } from '../../types/plugin';
+import { plugins } from '../../data/marketplace';
+import { pluginSourceUrl } from '../../constants';
+import { renderMarkdown } from '../../utils/markdown';
 import Layout from '../../layouts/Layout.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
-
-import '../../styles/global.css';
-
-import marketplace from '../../../../.eca-plugin/marketplace.json';
+import GitHubAvatar from '../../components/GitHubAvatar.astro';
 
 export function getStaticPaths() {
-  const plugins = (marketplace as any).plugins;
-  return plugins.map((plugin: any) => ({
+  return plugins.map((plugin) => ({
     params: { name: plugin.name },
     props: { plugin },
   }));
 }
 
-interface Plugin {
-  name: string;
-  description: string;
-  source: string;
-  category: string;
-  tags: string[];
-  author: string;
-  icon: string;
-}
-
 const { plugin } = Astro.props as { plugin: Plugin };
 
 let readmeHtml = '';
-const processor = unified()
-  .use(remarkParse)
-  .use(remarkRehype)
-  .use(rehypeStringify);
-
 const readmePath = path.resolve('..', plugin.source, 'README.md');
 if (fs.existsSync(readmePath)) {
   const md = fs.readFileSync(readmePath, 'utf-8');
-  const result = await processor.process(md);
-  readmeHtml = String(result);
+  readmeHtml = await renderMarkdown(md);
 }
 
 const configSnippet = `{
@@ -55,7 +33,6 @@ const configSnippet = `{
 ---
 
 <Layout title={`${plugin.name} — ECA Plugin`} description={plugin.description}>
-  <Header />
   <main class="detail-main">
     <div class="container">
       <a href="/" class="back-link">
@@ -86,14 +63,7 @@ const configSnippet = `{
           </div>
 
           <div class="detail-author">
-            <img
-              src={`https://github.com/${plugin.author}.png?size=40`}
-              alt={plugin.author}
-              class="detail-author-avatar"
-              width="20"
-              height="20"
-              loading="lazy"
-            />
+            <GitHubAvatar author={plugin.author} size={40} class="detail-author-avatar" />
             <a href={`https://github.com/${plugin.author}`} target="_blank" rel="noopener">{plugin.author}</a>
           </div>
 
@@ -137,20 +107,13 @@ const configSnippet = `{
             <div class="detail-info-row">
               <span class="detail-info-label">Author</span>
               <span class="detail-info-value">
-                <img
-                  src={`https://github.com/${plugin.author}.png?size=32`}
-                  alt={plugin.author}
-                  class="detail-info-avatar"
-                  width="16"
-                  height="16"
-                  loading="lazy"
-                />
+                <GitHubAvatar author={plugin.author} size={32} class="detail-info-avatar" />
                 {plugin.author}
               </span>
             </div>
             <div class="detail-info-row">
               <span class="detail-info-label">Source</span>
-              <a href={`https://github.com/editor-code-assistant/eca-plugins/tree/main/${plugin.source}`} target="_blank" rel="noopener" class="detail-info-link">
+              <a href={pluginSourceUrl(plugin.source)} target="_blank" rel="noopener" class="detail-info-link">
                 View on GitHub →
               </a>
             </div>
@@ -159,7 +122,6 @@ const configSnippet = `{
       </div>
     </div>
   </main>
-  <Footer />
 </Layout>
 
 <script>
@@ -168,13 +130,6 @@ const configSnippet = `{
   const checkIcon = document.getElementById('check-icon')!;
   const copyText = document.getElementById('copy-text')!;
   const configEl = document.getElementById('config-code')!;
-
-  const avatars = document.querySelectorAll<HTMLImageElement>('.detail-author-avatar, .detail-info-avatar');
-  avatars.forEach(img => {
-    img.addEventListener('error', () => {
-      img.style.display = 'none';
-    });
-  });
 
   copyBtn.addEventListener('click', async () => {
     try {
@@ -295,10 +250,7 @@ const configSnippet = `{
     margin-bottom: 24px;
   }
 
-  .detail-author-avatar {
-    border-radius: 50%;
-    background: var(--color-bg-surface);
-  }
+
 
   .detail-author a {
     color: var(--color-text-secondary);
@@ -394,7 +346,7 @@ const configSnippet = `{
   }
 
   .detail-readme-content :global(a:hover) {
-    color: #4dc9da;
+    color: var(--color-primary-hover);
   }
 
   .detail-readme-content :global(blockquote) {
@@ -519,10 +471,7 @@ const configSnippet = `{
     gap: 6px;
   }
 
-  .detail-info-avatar {
-    border-radius: 50%;
-    background: var(--color-bg-surface);
-  }
+
 
   .detail-info-link {
     font-size: 0.8rem;

@@ -1,15 +1,6 @@
 ---
+import type { Plugin } from '../types/plugin';
 import PluginCard from './PluginCard.astro';
-
-interface Plugin {
-  name: string;
-  description: string;
-  source: string;
-  category: string;
-  tags: string[];
-  author: string;
-  icon: string;
-}
 
 interface Props {
   plugins: Plugin[];
@@ -62,6 +53,7 @@ const categories = ['All', ...new Set(plugins.map(p => p.category))];
 </section>
 
 <script>
+  // Coupled: #search-input is rendered by Hero.astro
   const searchInput = document.getElementById('search-input') as HTMLInputElement;
   const grid = document.getElementById('plugin-grid')!;
   const pills = document.querySelectorAll<HTMLButtonElement>('.filter-pill');
