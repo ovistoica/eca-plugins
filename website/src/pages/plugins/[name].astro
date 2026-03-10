@@ -1,0 +1,557 @@
+---
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
+import remarkRehype from 'remark-rehype';
+import rehypeStringify from 'rehype-stringify';
+import fs from 'node:fs';
+import path from 'node:path';
+
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+
+import '../../styles/global.css';
+
+import marketplace from '../../../../.eca-plugin/marketplace.json';
+
+export function getStaticPaths() {
+  const plugins = (marketplace as any).plugins;
+  return plugins.map((plugin: any) => ({
+    params: { name: plugin.name },
+    props: { plugin },
+  }));
+}
+
+interface Plugin {
+  name: string;
+  description: string;
+  source: string;
+  category: string;
+  tags: string[];
+  author: string;
+  icon: string;
+}
+
+const { plugin } = Astro.props as { plugin: Plugin };
+
+let readmeHtml = '';
+const processor = unified()
+  .use(remarkParse)
+  .use(remarkRehype)
+  .use(rehypeStringify);
+
+const readmePath = path.resolve('..', plugin.source, 'README.md');
+if (fs.existsSync(readmePath)) {
+  const md = fs.readFileSync(readmePath, 'utf-8');
+  const result = await processor.process(md);
+  readmeHtml = String(result);
+}
+
+const configSnippet = `{
+  "plugins": {
+    "install": ["${plugin.name}"]
+  }
+}`;
+---
+
+<Layout title={`${plugin.name} — ECA Plugin`} description={plugin.description}>
+  <Header />
+  <main class="detail-main">
+    <div class="container">
+      <a href="/" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Back to plugins
+      </a>
+
+      <div class="detail-layout">
+        <div class="detail-content">
+          <div class="detail-header">
+            <span class="detail-icon">{plugin.icon}</span>
+            <div>
+              <h1 class="detail-name">{plugin.name}</h1>
+              <p class="detail-description">{plugin.description}</p>
+            </div>
+          </div>
+
+          <div class="detail-meta">
+            <span class="detail-category">{plugin.category}</span>
+            <div class="detail-tags">
+              {plugin.tags.map(tag => (
+                <span class="detail-tag">{tag}</span>
+              ))}
+            </div>
+          </div>
+
+          <div class="detail-author">
+            <img
+              src={`https://github.com/${plugin.author}.png?size=40`}
+              alt={plugin.author}
+              class="detail-author-avatar"
+              width="20"
+              height="20"
+              loading="lazy"
+            />
+            <a href={`https://github.com/${plugin.author}`} target="_blank" rel="noopener">{plugin.author}</a>
+          </div>
+
+          {readmeHtml && (
+            <div class="detail-readme">
+              <div class="detail-readme-divider"></div>
+              <div class="detail-readme-content" set:html={readmeHtml} />
+            </div>
+          )}
+        </div>
+
+        <aside class="detail-sidebar">
+          <div class="detail-install">
+            <div class="detail-install-header">
+              <h3 class="detail-install-title">Install</h3>
+              <button class="detail-copy-btn" aria-label="Copy config to clipboard" id="copy-btn">
+                <svg class="detail-copy-icon" id="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <svg class="detail-check-icon" id="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" hidden>
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span id="copy-text">Copy</span>
+              </button>
+            </div>
+            <p class="detail-install-hint">
+              Add this to your <code>config.json</code> (global or project-level):
+            </p>
+            <pre class="detail-code"><code id="config-code">{configSnippet}</code></pre>
+            <p class="detail-install-alt">
+              Or install interactively with <code>/plugin-install</code> inside ECA.
+            </p>
+          </div>
+
+          <div class="detail-info">
+            <div class="detail-info-row">
+              <span class="detail-info-label">Category</span>
+              <span class="detail-info-value">{plugin.category}</span>
+            </div>
+            <div class="detail-info-row">
+              <span class="detail-info-label">Author</span>
+              <span class="detail-info-value">
+                <img
+                  src={`https://github.com/${plugin.author}.png?size=32`}
+                  alt={plugin.author}
+                  class="detail-info-avatar"
+                  width="16"
+                  height="16"
+                  loading="lazy"
+                />
+                {plugin.author}
+              </span>
+            </div>
+            <div class="detail-info-row">
+              <span class="detail-info-label">Source</span>
+              <a href={`https://github.com/editor-code-assistant/eca-plugins/tree/main/${plugin.source}`} target="_blank" rel="noopener" class="detail-info-link">
+                View on GitHub →
+              </a>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  const copyBtn = document.getElementById('copy-btn')!;
+  const copyIcon = document.getElementById('copy-icon')!;
+  const checkIcon = document.getElementById('check-icon')!;
+  const copyText = document.getElementById('copy-text')!;
+  const configEl = document.getElementById('config-code')!;
+
+  const avatars = document.querySelectorAll<HTMLImageElement>('.detail-author-avatar, .detail-info-avatar');
+  avatars.forEach(img => {
+    img.addEventListener('error', () => {
+      img.style.display = 'none';
+    });
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(configEl.textContent ?? '');
+      copyIcon.setAttribute('hidden', '');
+      checkIcon.removeAttribute('hidden');
+      copyText.textContent = 'Copied!';
+
+      setTimeout(() => {
+        copyIcon.removeAttribute('hidden');
+        checkIcon.setAttribute('hidden', '');
+        copyText.textContent = 'Copy';
+      }, 2000);
+    } catch {
+      const range = document.createRange();
+      range.selectNodeContents(configEl);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  });
+</script>
+
+<style>
+  .detail-main {
+    min-height: calc(100vh - var(--header-height) - 100px);
+    padding: 32px 0 80px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 32px;
+    transition: color var(--transition-fast);
+  }
+
+  .back-link:hover {
+    color: var(--color-primary-light);
+  }
+
+  .detail-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 40px;
+    align-items: start;
+  }
+
+  .detail-header {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+
+  .detail-icon {
+    font-size: 3rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .detail-name {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .detail-description {
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
+  .detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .detail-category {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-accent-blue);
+    background: rgba(126, 200, 227, 0.1);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+  }
+
+  .detail-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .detail-tag {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-surface);
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+  }
+
+  .detail-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin-bottom: 24px;
+  }
+
+  .detail-author-avatar {
+    border-radius: 50%;
+    background: var(--color-bg-surface);
+  }
+
+  .detail-author a {
+    color: var(--color-text-secondary);
+  }
+
+  .detail-author a:hover {
+    color: var(--color-primary-light);
+  }
+
+  /* README */
+  .detail-readme {
+    margin-top: 8px;
+  }
+
+  .detail-readme-divider {
+    height: 1px;
+    background: var(--color-border);
+    margin-bottom: 24px;
+  }
+
+  .detail-readme-content {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+  }
+
+  .detail-readme-content :global(h1) {
+    display: none;
+  }
+
+  .detail-readme-content :global(h2) {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 28px 0 12px;
+  }
+
+  .detail-readme-content :global(h3) {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 20px 0 8px;
+  }
+
+  .detail-readme-content :global(p) {
+    margin: 0 0 14px;
+  }
+
+  .detail-readme-content :global(ul),
+  .detail-readme-content :global(ol) {
+    margin: 0 0 14px;
+    padding-left: 24px;
+  }
+
+  .detail-readme-content :global(li) {
+    margin-bottom: 6px;
+  }
+
+  .detail-readme-content :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--color-bg-surface);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    color: var(--color-accent-blue);
+  }
+
+  .detail-readme-content :global(pre) {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+    line-height: 1.5;
+  }
+
+  .detail-readme-content :global(pre code) {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  .detail-readme-content :global(strong) {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+
+  .detail-readme-content :global(a) {
+    color: var(--color-primary-light);
+  }
+
+  .detail-readme-content :global(a:hover) {
+    color: #4dc9da;
+  }
+
+  .detail-readme-content :global(blockquote) {
+    border-left: 3px solid var(--color-border-active);
+    margin: 0 0 14px;
+    padding: 10px 16px;
+    color: var(--color-text-muted);
+    background: rgba(0, 165, 184, 0.05);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+
+  .detail-readme-content :global(blockquote p) {
+    margin: 0;
+  }
+
+  /* Sidebar */
+  .detail-sidebar {
+    position: sticky;
+    top: calc(var(--header-height) + 24px);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .detail-install {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+  }
+
+  .detail-install-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .detail-install-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .detail-copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-primary-light);
+    background: none;
+    border: 1px solid rgba(0, 165, 184, 0.3);
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+  }
+
+  .detail-copy-btn:hover {
+    background: rgba(0, 165, 184, 0.1);
+    border-color: rgba(0, 165, 184, 0.5);
+  }
+
+  .detail-install-hint {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-bottom: 10px;
+  }
+
+  .detail-code {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--color-accent-blue);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+
+  .detail-install-alt {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+  }
+
+  .detail-info {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .detail-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .detail-info-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+  }
+
+  .detail-info-value {
+    font-size: 0.85rem;
+    color: var(--color-text-primary);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .detail-info-avatar {
+    border-radius: 50%;
+    background: var(--color-bg-surface);
+  }
+
+  .detail-info-link {
+    font-size: 0.8rem;
+    color: var(--color-primary-light);
+    font-weight: 500;
+  }
+
+  @media (max-width: 900px) {
+    .detail-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .detail-sidebar {
+      position: static;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .detail-main {
+      padding: 20px 0 48px;
+    }
+
+    .detail-header {
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .detail-name {
+      font-size: 1.4rem;
+    }
+  }
+</style>

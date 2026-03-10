@@ -6,25 +6,21 @@ interface Props {
   tags: string[];
   author: string;
   icon: string;
-  featured?: boolean;
 }
 
-const { name, description, category, tags, author, icon, featured = false } = Astro.props;
+const { name, description, category, tags, author, icon } = Astro.props;
 ---
 
-<article
-  class:list={['plugin-card', { 'plugin-card--featured': featured }]}
+<a
+  href={`/plugins/${name}/`}
+  class="plugin-card"
   data-name={name}
   data-description={description}
   data-category={category}
   data-tags={tags.join(',')}
-  data-author={author}
-  tabindex="0"
-  role="button"
 >
   <div class="plugin-card-top">
     <span class="plugin-card-icon">{icon}</span>
-    {featured && <span class="plugin-card-featured">Featured</span>}
   </div>
 
   <h3 class="plugin-card-name">{name}</h3>
@@ -41,14 +37,18 @@ const { name, description, category, tags, author, icon, featured = false } = As
 
   <div class="plugin-card-footer">
     <span class="plugin-card-author">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-        <circle cx="12" cy="7" r="4"></circle>
-      </svg>
+      <img
+        src={`https://github.com/${author}.png?size=32`}
+        alt={author}
+        class="plugin-card-avatar"
+        width="16"
+        height="16"
+        loading="lazy"
+      />
       {author}
     </span>
   </div>
-</article>
+</a>
 
 <style>
   .plugin-card {
@@ -60,6 +60,7 @@ const { name, description, category, tags, author, icon, featured = false } = As
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     cursor: pointer;
+    color: inherit;
     transition:
       transform var(--transition-normal),
       border-color var(--transition-normal),
@@ -86,6 +87,7 @@ const { name, description, category, tags, author, icon, featured = false } = As
     border-color: var(--color-border-hover);
     background: var(--color-bg-card-hover);
     box-shadow: var(--shadow-lg), var(--shadow-glow);
+    color: inherit;
   }
 
   .plugin-card:hover::before,
@@ -98,10 +100,6 @@ const { name, description, category, tags, author, icon, featured = false } = As
     outline-offset: 2px;
   }
 
-  .plugin-card--featured {
-    border-color: rgba(0, 165, 184, 0.2);
-  }
-
   .plugin-card-top {
     display: flex;
     align-items: center;
@@ -112,17 +110,6 @@ const { name, description, category, tags, author, icon, featured = false } = As
   .plugin-card-icon {
     font-size: 2rem;
     line-height: 1;
-  }
-
-  .plugin-card-featured {
-    font-size: 0.65rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--color-primary-light);
-    background: rgba(0, 165, 184, 0.12);
-    padding: 3px 8px;
-    border-radius: var(--radius-full);
   }
 
   .plugin-card-name {
@@ -194,9 +181,34 @@ const { name, description, category, tags, author, icon, featured = false } = As
     color: var(--color-text-muted);
   }
 
+  .plugin-card-avatar {
+    border-radius: 50%;
+    background: var(--color-bg-surface);
+    flex-shrink: 0;
+  }
+
   @media (max-width: 640px) {
     .plugin-card {
       padding: 18px;
     }
   }
 </style>
+
+<script>
+  document.querySelectorAll<HTMLImageElement>('.plugin-card-avatar').forEach(img => {
+    img.addEventListener('error', function() {
+      this.style.display = 'none';
+      const fallback = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      fallback.setAttribute('width', '16');
+      fallback.setAttribute('height', '16');
+      fallback.setAttribute('viewBox', '0 0 24 24');
+      fallback.setAttribute('fill', 'none');
+      fallback.setAttribute('stroke', 'currentColor');
+      fallback.setAttribute('stroke-width', '2');
+      fallback.setAttribute('stroke-linecap', 'round');
+      fallback.setAttribute('stroke-linejoin', 'round');
+      fallback.innerHTML = '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>';
+      this.parentNode?.insertBefore(fallback, this);
+    }, { once: true });
+  });
+</script>

@@ -9,20 +9,15 @@ interface Plugin {
   tags: string[];
   author: string;
   icon: string;
-  featured?: boolean;
 }
 
 interface Props {
   plugins: Plugin[];
-  readmeMap?: Record<string, string>;
 }
 
-const { plugins, readmeMap = {} } = Astro.props;
+const { plugins } = Astro.props;
 
 const categories = ['All', ...new Set(plugins.map(p => p.category))];
-const featured = plugins.filter(p => p.featured);
-const rest = plugins.filter(p => !p.featured);
-const sorted = [...featured, ...rest];
 ---
 
 <section class="grid-section">
@@ -46,7 +41,7 @@ const sorted = [...featured, ...rest];
     </div>
 
     <div class="plugin-grid" id="plugin-grid">
-      {sorted.map(plugin => (
+      {plugins.map(plugin => (
         <PluginCard
           name={plugin.name}
           description={plugin.description}
@@ -54,7 +49,6 @@ const sorted = [...featured, ...rest];
           tags={plugin.tags}
           author={plugin.author}
           icon={plugin.icon}
-          featured={plugin.featured}
         />
       ))}
     </div>
@@ -64,27 +58,32 @@ const sorted = [...featured, ...rest];
       <p class="grid-empty-title">No plugins found</p>
       <p class="grid-empty-text">Try a different search term or category</p>
     </div>
-
-    {Object.entries(readmeMap).map(([name, html]) => (
-      <template data-readme={name}>
-        <Fragment set:html={html} />
-      </template>
-    ))}
   </div>
 </section>
 
 <script>
   const searchInput = document.getElementById('search-input') as HTMLInputElement;
   const grid = document.getElementById('plugin-grid')!;
-  const cards = grid.querySelectorAll<HTMLElement>('.plugin-card');
   const pills = document.querySelectorAll<HTMLButtonElement>('.filter-pill');
   const countEl = document.getElementById('visible-count')!;
   const emptyEl = document.getElementById('grid-empty')!;
 
   let activeCategory = 'All';
 
+  // Shuffle cards on page load for random order each visit
+  function shuffleGrid() {
+    const cards = Array.from(grid.children) as HTMLElement[];
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      grid.appendChild(cards[j]);
+      cards[j] = cards[i];
+    }
+  }
+  shuffleGrid();
+
   function filterCards() {
     const query = searchInput?.value.toLowerCase().trim() ?? '';
+    const cards = grid.querySelectorAll<HTMLElement>('.plugin-card');
     let visible = 0;
 
     cards.forEach(card => {
@@ -135,59 +134,6 @@ const sorted = [...featured, ...rest];
       filterCards();
     }
   });
-
-  // Open modal on card click/enter
-  grid.addEventListener('click', (e) => {
-    const card = (e.target as HTMLElement).closest('.plugin-card') as HTMLElement | null;
-    if (card) openModal(card);
-  });
-
-  grid.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      const card = (e.target as HTMLElement).closest('.plugin-card') as HTMLElement | null;
-      if (card) openModal(card);
-    }
-  });
-
-  function openModal(card: HTMLElement) {
-    const modal = document.getElementById('plugin-modal')!;
-    const name = card.dataset.name ?? '';
-    const description = card.dataset.description ?? '';
-    const category = card.dataset.category ?? '';
-    const tags = card.dataset.tags ?? '';
-    const author = card.dataset.author ?? '';
-
-    modal.querySelector('[data-modal-name]')!.textContent = name;
-    modal.querySelector('[data-modal-description]')!.textContent = description;
-    modal.querySelector('[data-modal-category]')!.textContent = category;
-    modal.querySelector('[data-modal-author]')!.textContent = author;
-
-    const tagsContainer = modal.querySelector('[data-modal-tags]')!;
-    tagsContainer.innerHTML = tags.split(',').filter(Boolean)
-      .map(t => `<span class="modal-tag">${t}</span>`).join('');
-
-    const configSnippet = `{
-  "plugins": {
-    "install": ["${name}"]
-  }
-}`;
-    modal.querySelector('[data-modal-config]')!.textContent = configSnippet;
-
-    const readmeSection = modal.querySelector('[data-modal-readme]') as HTMLElement;
-    const readmeTemplate = document.querySelector('template[data-readme="' + name + '"]') as HTMLTemplateElement | null;
-    if (readmeTemplate && readmeSection) {
-      readmeSection.innerHTML = readmeTemplate.innerHTML;
-      readmeSection.parentElement!.hidden = false;
-    } else if (readmeSection) {
-      readmeSection.innerHTML = '';
-      readmeSection.parentElement!.hidden = true;
-    }
-
-    modal.classList.add('modal--open');
-    document.body.style.overflow = 'hidden';
-    modal.querySelector('.modal-content')!.scrollTop = 0;
-    (modal.querySelector('.modal-close') as HTMLElement)?.focus();
-  }
 </script>
 
 <style>

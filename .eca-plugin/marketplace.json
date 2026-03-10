@@ -39,6 +39,26 @@
       "author": "ericdallo",
       "icon": "🔔",
       "featured": false
+    },
+    {
+      "name": "nucleus-clojure",
+      "description": "Clojure-specific AI prompt skill activating nucleus operating principles for REPL-driven development with OODA loop",
+      "source": "plugins/nucleus-clojure",
+      "category": "Development",
+      "tags": ["clojure", "repl", "skill", "nucleus"],
+      "author": "michaelwhitford",
+      "icon": "⚛️",
+      "featured": false
+    },
+    {
+      "name": "brepl",
+      "description": "Skill teaching the heredoc pattern for reliable Clojure code evaluation via brepl REPL client",
+      "source": "plugins/brepl",
+      "category": "Development",
+      "tags": ["clojure", "repl", "skill", "brepl", "evaluation"],
+      "author": "licht1stein",
+      "icon": "🔮",
+      "featured": false
     }
   ]
 }
