@@ -1,11 +1,11 @@
 ---
 import fs from 'node:fs';
 import path from 'node:path';
-
 import type { Plugin } from '../../types/plugin';
 import { plugins } from '../../data/marketplace';
 import { pluginSourceUrl } from '../../constants';
 import { renderMarkdown } from '../../utils/markdown';
+import { highlightCode } from '../../utils/highlight';
 import Layout from '../../layouts/Layout.astro';
 import GitHubAvatar from '../../components/GitHubAvatar.astro';
 
@@ -18,12 +18,101 @@ export function getStaticPaths() {
 
 const { plugin } = Astro.props as { plugin: Plugin };
 
+const pluginDir = path.resolve('..', plugin.source);
+
+// --- README ---
 let readmeHtml = '';
-const readmePath = path.resolve('..', plugin.source, 'README.md');
+const readmePath = path.join(pluginDir, 'README.md');
 if (fs.existsSync(readmePath)) {
   const md = fs.readFileSync(readmePath, 'utf-8');
   readmeHtml = await renderMarkdown(md);
 }
+
+// --- Discover plugin files ---
+
+interface PluginFile {
+  filename: string;
+  html: string;
+}
+
+// Skills: skills/*/SKILL.md
+const skillsDir = path.join(pluginDir, 'skills');
+const skills: PluginFile[] = [];
+if (fs.existsSync(skillsDir)) {
+  const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      const skillFile = path.join(skillsDir, entry.name, 'SKILL.md');
+      if (fs.existsSync(skillFile)) {
+        const filename = `skills/${entry.name}/SKILL.md`;
+        skills.push({
+          filename,
+          html: await highlightCode(fs.readFileSync(skillFile, 'utf-8'), filename),
+        });
+      }
+    }
+  }
+}
+
+// Agents: agents/*.md
+const agentsDir = path.join(pluginDir, 'agents');
+const agents: PluginFile[] = [];
+if (fs.existsSync(agentsDir)) {
+  const entries = fs.readdirSync(agentsDir).filter((f) => f.endsWith('.md'));
+  for (const file of entries) {
+    const filename = `agents/${file}`;
+    agents.push({
+      filename,
+      html: await highlightCode(fs.readFileSync(path.join(agentsDir, file), 'utf-8'), filename),
+    });
+  }
+}
+
+// Rules: rules/*.md
+const rulesDir = path.join(pluginDir, 'rules');
+const rules: PluginFile[] = [];
+if (fs.existsSync(rulesDir)) {
+  const entries = fs.readdirSync(rulesDir).filter((f) => f.endsWith('.md'));
+  for (const file of entries) {
+    const filename = `rules/${file}`;
+    rules.push({
+      filename,
+      html: await highlightCode(fs.readFileSync(path.join(rulesDir, file), 'utf-8'), filename),
+    });
+  }
+}
+
+// Hooks: hooks/hooks.json + *.sh
+const hooksDir = path.join(pluginDir, 'hooks');
+let hooksJsonHtml = '';
+const hookScripts: PluginFile[] = [];
+if (fs.existsSync(hooksDir)) {
+  const hooksJsonPath = path.join(hooksDir, 'hooks.json');
+  if (fs.existsSync(hooksJsonPath)) {
+    hooksJsonHtml = await highlightCode(fs.readFileSync(hooksJsonPath, 'utf-8'), 'hooks.json');
+  }
+  const shFiles = fs.readdirSync(hooksDir).filter((f) => f.endsWith('.sh'));
+  for (const file of shFiles) {
+    const filename = `hooks/${file}`;
+    hookScripts.push({
+      filename,
+      html: await highlightCode(fs.readFileSync(path.join(hooksDir, file), 'utf-8'), filename),
+    });
+  }
+}
+const hasHooks = hooksJsonHtml || hookScripts.length > 0;
+
+// Build tabs array
+interface Tab {
+  id: string;
+  label: string;
+}
+
+const tabs: Tab[] = [{ id: 'readme', label: 'README' }];
+if (skills.length > 0) tabs.push({ id: 'skills', label: 'Skills' });
+if (agents.length > 0) tabs.push({ id: 'agents', label: 'Agents' });
+if (rules.length > 0) tabs.push({ id: 'rules', label: 'Rules' });
+if (hasHooks) tabs.push({ id: 'hooks', label: 'Hooks' });
 
 const installCommand = `/plugin-install ${plugin.name}`;
 const configSnippet = `{
@@ -68,12 +157,124 @@ const configSnippet = `{
             <a href={`https://github.com/${plugin.author}`} target="_blank" rel="noopener">{plugin.author}</a>
           </div>
 
-          {readmeHtml && (
-            <div class="detail-readme">
-              <div class="detail-readme-divider"></div>
-              <div class="detail-readme-content" set:html={readmeHtml} />
+          <div class="detail-tabs">
+            <div class="detail-tabs-divider"></div>
+            {tabs.length > 1 && (
+              <div class="detail-tab-bar" role="tablist">
+                {tabs.map((tab, i) => (
+                  <button
+                    role="tab"
+                    class={`detail-tab ${i === 0 ? 'detail-tab--active' : ''}`}
+                    aria-selected={i === 0 ? 'true' : 'false'}
+                    aria-controls={`panel-${tab.id}`}
+                    data-tab={tab.id}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* README Panel */}
+            <div
+              id="panel-readme"
+              role="tabpanel"
+              class="detail-tab-panel detail-tab-panel--active"
+              data-panel="readme"
+            >
+              {readmeHtml && (
+                <div class="detail-readme-content" set:html={readmeHtml} />
+              )}
             </div>
-          )}
+
+            {/* Skills Panel */}
+            {skills.length > 0 && (
+              <div
+                id="panel-skills"
+                role="tabpanel"
+                class="detail-tab-panel"
+                data-panel="skills"
+                hidden
+              >
+                {skills.map((skill) => (
+                  <div class="detail-file-section">
+                    <div class="detail-file-bar">
+                      <code class="detail-file-name">{skill.filename}</code>
+                    </div>
+                    <div class="detail-code-block" set:html={skill.html} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Agents Panel */}
+            {agents.length > 0 && (
+              <div
+                id="panel-agents"
+                role="tabpanel"
+                class="detail-tab-panel"
+                data-panel="agents"
+                hidden
+              >
+                {agents.map((agent) => (
+                  <div class="detail-file-section">
+                    <div class="detail-file-bar">
+                      <code class="detail-file-name">{agent.filename}</code>
+                    </div>
+                    <div class="detail-code-block" set:html={agent.html} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Rules Panel */}
+            {rules.length > 0 && (
+              <div
+                id="panel-rules"
+                role="tabpanel"
+                class="detail-tab-panel"
+                data-panel="rules"
+                hidden
+              >
+                {rules.map((rule) => (
+                  <div class="detail-file-section">
+                    <div class="detail-file-bar">
+                      <code class="detail-file-name">{rule.filename}</code>
+                    </div>
+                    <div class="detail-code-block" set:html={rule.html} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Hooks Panel */}
+            {hasHooks && (
+              <div
+                id="panel-hooks"
+                role="tabpanel"
+                class="detail-tab-panel"
+                data-panel="hooks"
+                hidden
+              >
+                {hooksJsonHtml && (
+                  <div class="detail-file-section">
+                    <div class="detail-file-bar">
+                      <code class="detail-file-name">hooks/hooks.json</code>
+                    </div>
+                    <div class="detail-code-block" set:html={hooksJsonHtml} />
+                  </div>
+                )}
+                {hookScripts.map((script) => (
+                  <div class="detail-file-section">
+                    <div class="detail-file-bar">
+                      <code class="detail-file-name">{script.filename}</code>
+                    </div>
+                    <div class="detail-code-block" set:html={script.html} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <aside class="detail-sidebar">
@@ -186,6 +387,36 @@ const configSnippet = `{
       }
     });
   });
+
+  /* Tab switching */
+  const tabBar = document.querySelector<HTMLDivElement>('.detail-tab-bar');
+  if (tabBar) {
+    const tabButtons = tabBar.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    const panels = document.querySelectorAll<HTMLDivElement>('[role="tabpanel"]');
+
+    tabButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.dataset.tab;
+
+        tabButtons.forEach((b) => {
+          b.classList.remove('detail-tab--active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('detail-tab--active');
+        btn.setAttribute('aria-selected', 'true');
+
+        panels.forEach((panel) => {
+          if (panel.dataset.panel === targetId) {
+            panel.removeAttribute('hidden');
+            panel.classList.add('detail-tab-panel--active');
+          } else {
+            panel.setAttribute('hidden', '');
+            panel.classList.remove('detail-tab-panel--active');
+          }
+        });
+      });
+    });
+  }
 </script>
 
 <style>
@@ -215,6 +446,10 @@ const configSnippet = `{
     align-items: start;
     max-width: 1320px;
     margin: 0 auto;
+  }
+
+  .detail-content {
+    min-width: 0;
   }
 
   .detail-header {
@@ -297,17 +532,116 @@ const configSnippet = `{
     color: var(--color-primary-light);
   }
 
-  /* README */
-  .detail-readme {
+  /* Tabs */
+  .detail-tabs {
     margin-top: 8px;
   }
 
-  .detail-readme-divider {
+  .detail-tabs-divider {
     height: 1px;
     background: var(--color-border);
-    margin-bottom: 24px;
+    margin-bottom: 0;
   }
 
+  .detail-tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--color-border);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .detail-tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .detail-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 18px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color var(--transition-fast), border-color var(--transition-fast),
+      background var(--transition-fast);
+    font-family: var(--font-sans);
+  }
+
+  .detail-tab:hover {
+    color: var(--color-text-secondary);
+    background: rgba(0, 165, 184, 0.05);
+  }
+
+  .detail-tab--active {
+    color: var(--color-primary-light);
+    border-bottom-color: var(--color-primary-light);
+  }
+
+  .detail-tab--active:hover {
+    color: var(--color-primary-light);
+  }
+
+  .detail-tab-panel {
+    padding-top: 24px;
+  }
+
+  .detail-tab-panel[hidden] {
+    display: none;
+  }
+
+  /* File section inside tabs */
+  .detail-file-section {
+    margin-bottom: 32px;
+  }
+
+  .detail-file-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .detail-file-bar {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-bottom: none;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+  }
+
+  .detail-file-name {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    background: none;
+    padding: 0;
+  }
+
+  .detail-code-block :global(pre) {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    padding: 16px 20px;
+    overflow-x: auto;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .detail-code-block :global(pre code) {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+    color: inherit;
+  }
+
+  /* README content */
   .detail-readme-content {
     font-size: 0.9rem;
     color: var(--color-text-secondary);
@@ -640,6 +974,28 @@ const configSnippet = `{
 
     .detail-description {
       font-size: 0.9rem;
+    }
+
+    .detail-tab {
+      padding: 10px 14px;
+      font-size: 0.8rem;
+    }
+
+    .detail-tab-panel {
+      padding-top: 18px;
+    }
+
+    .detail-file-bar {
+      padding: 8px 12px;
+    }
+
+    .detail-file-name {
+      font-size: 0.75rem;
+    }
+
+    .detail-code-block :global(pre) {
+      font-size: 0.75rem;
+      padding: 12px;
     }
 
     .detail-install {
