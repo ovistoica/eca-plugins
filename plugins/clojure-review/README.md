@@ -4,7 +4,7 @@ A thorough Clojure(Script) code review subagent inspired by the design principle
 
 ## What it provides
 
-- **`reviewer` subagent** — Reviews Clojure(Script) code and provides structured, actionable feedback with an emphasis on idiomatic design, readability, and pragmatic simplicity.
+- **`clojure-reviewer` subagent** — Reviews Clojure(Script) code and provides structured, actionable feedback with an emphasis on idiomatic design, readability, and pragmatic simplicity.
 - **Rule** — Automatically routes review requests to the reviewer subagent.
 
 ## Review focus areas
