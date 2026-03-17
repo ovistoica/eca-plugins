@@ -129,6 +129,16 @@
       "author": "editor-code-assistant",
       "icon": "📓",
       "featured": false
+    },
+    {
+      "name": "superpowers",
+      "description": "Agentic development methodology: spec-driven brainstorming, structured planning, subagent-driven development, TDD, and systematic debugging",
+      "source": "plugins/superpowers",
+      "category": "Workflow",
+      "tags": ["methodology", "skill", "planning", "tdd", "debugging", "subagent", "workflow"],
+      "author": "obra",
+      "icon": "⚡",
+      "featured": true
     }
   ]
 }
