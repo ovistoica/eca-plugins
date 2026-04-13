@@ -139,6 +139,16 @@
       "author": "obra",
       "icon": "⚡",
       "featured": true
+    },
+    {
+      "name": "caveman",
+      "description": "Ultra-compressed communication skill that cuts ~75% of output tokens by talking like caveman while keeping full technical accuracy",
+      "source": "plugins/caveman",
+      "category": "Productivity",
+      "tags": ["tokens", "compression", "skill", "efficiency"],
+      "author": "JuliusBrussee",
+      "icon": "🪨",
+      "featured": false
     }
   ]
 }
