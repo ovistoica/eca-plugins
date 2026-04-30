@@ -149,6 +149,16 @@
       "author": "JuliusBrussee",
       "icon": "🪨",
       "featured": false
+    },
+    {
+      "name": "allium",
+      "description": "Formal behavioural specifications for capturing system intent, surfacing ambiguity, checking spec-code drift, and generating tests; optional Allium CLI adds validation and analysis",
+      "source": "plugins/allium",
+      "category": "Development",
+      "tags": ["specification", "behaviour", "BDD", "domain-modelling", "testing"],
+      "author": "JUXT",
+      "icon": "🧅",
+      "featured": true
     }
   ]
 }
