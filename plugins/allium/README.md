@@ -1,12 +1,12 @@
 # Allium 🧅
 
-Behavioural specification language plugin for ECA — elicit, distill, tend, weed and propagate Allium specs alongside your code.
+Give ECA durable behavioural intent that does not drift with the conversation and persists across sessions.
 
 ## What is Allium?
 
-Allium is a formal language for capturing software behaviour at the domain level. It sits between informal feature descriptions and implementation, providing a precise way to specify **what** software does without prescribing **how** it's built.
+[Allium](https://juxt.github.io/allium/) is a behavioural specification language for capturing what software is meant to do, not just what the code currently does. It gives system intent a durable, structured form so ECA can preserve constraints across sessions, surface ambiguity, and notice when implementation and intent diverge.
 
-Allium has no compiler or runtime — it's purely descriptive, interpreted by LLMs and humans. The optional [Allium CLI](https://github.com/juxt/allium-tools) adds parser-backed validation, analysis and test planning.
+Allium has no compiler or runtime — it is a specification artefact interpreted by LLMs and humans. The optional [Allium CLI](https://github.com/juxt/allium-tools) adds parser-backed validation and analysis.
 
 ## Install the CLI (recommended)
 
@@ -27,6 +27,18 @@ Then verify from the same environment that launches ECA:
 ```bash
 command -v allium && allium --version
 ```
+
+## First steps
+
+Start with `/allium` if you are not sure which workflow you need. It gives ECA the Allium syntax summary and routes you toward the right skill.
+
+If you are designing a new feature, start with `/allium:elicit`. ECA will ask structured questions about the boundary, actors, lifecycle states, triggers, edge cases, and open questions, then help turn the answers into a `.allium` specification.
+
+If you already have code and want to capture what it does, use `/allium:distill`. ECA will inspect the implementation, separate domain behaviour from implementation details, and draft a behavioural spec that can be reviewed and refined.
+
+Once a spec exists, use `/allium:tend` for targeted changes, `/allium:weed` to compare the spec with the implementation, and `/allium:propagate` to turn the spec into test obligations or concrete tests.
+
+What to expect: Allium does not replace implementation or tests. It gives ECA a durable behavioural model of what the system is meant to do, so future sessions can reason about intent, spot missing decisions, catch spec-code drift, and generate better tests from explicit behaviour.
 
 ## Plugin components
 
