@@ -10,23 +10,19 @@ Allium has no compiler or runtime — it is a specification artefact interpreted
 
 ## Install the CLI (recommended)
 
-The plugin works without the CLI, but automatic validation and analysis require the `allium` command to be available in ECA's `PATH`. Install it with Homebrew:
+The plugin works without the CLI, but automatic validation and analysis require the `allium` command to be available in `PATH`. Installation instructions are at [juxt/allium-tools](https://github.com/juxt/allium-tools).
 
-```bash
-brew tap juxt/allium && brew install allium
-```
+## First steps
 
-or Cargo:
+Start with `/allium` if you are not sure which workflow you need. It gives ECA the Allium syntax summary and routes you toward the right skill.
 
-```bash
-cargo install allium-cli
-```
+If you are designing a new feature, start with `/allium:elicit`. ECA will ask structured questions about the boundary, actors, lifecycle states, triggers, edge cases, and open questions, then help turn the answers into a `.allium` specification.
 
-Then verify from the same environment that launches ECA:
+If you already have code and want to capture what it does, use `/allium:distill`. ECA will inspect the implementation, separate domain behaviour from implementation details, and draft a behavioural spec that can be reviewed and refined.
 
-```bash
-command -v allium && allium --version
-```
+Once a spec exists, use `/allium:tend` for targeted changes, `/allium:weed` to compare the spec with the implementation, and `/allium:propagate` to turn the spec into test obligations or concrete tests.
+
+What to expect: Allium does not replace implementation or tests. It gives ECA a durable behavioural model of what the system is meant to do, so future sessions can reason about intent, spot missing decisions, catch spec-code drift, and generate better tests from explicit behaviour.
 
 ## First steps
 
