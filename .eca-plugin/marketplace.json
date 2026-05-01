@@ -152,7 +152,7 @@
     },
     {
       "name": "allium",
-      "description": "Formal behavioural specifications for capturing system intent, surfacing ambiguity, checking spec-code drift, and generating tests; optional Allium CLI adds validation and analysis",
+      "description": "Durable behavioural intent for ECA: capture what software is meant to do, surface ambiguity, spot spec-code drift, and generate tests; optional Allium CLI adds validation and analysis",
       "source": "plugins/allium",
       "category": "Development",
       "tags": ["specification", "behaviour", "BDD", "domain-modelling", "testing"],
