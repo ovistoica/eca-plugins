@@ -1,6 +1,16 @@
 {
   "plugins": [
     {
+      "name": "context-mode",
+      "description": "Saves 98% of context window via sandboxed execution, FTS5 search, and session continuity across compactions",
+      "source": "plugins/context-mode",
+      "category": "Development",
+      "tags": ["context", "mcp", "performance", "session", "sandbox"],
+      "author": "ovistoica",
+      "icon": "🪟",
+      "featured": false
+    },
+    {
       "name": "clojure-review",
       "description": "Principal Clojure(Script) code reviewer subagent with structured feedback on design, state management, idioms, and testing",
       "source": "plugins/clojure-review",
